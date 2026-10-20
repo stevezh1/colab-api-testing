@@ -1,22 +1,20 @@
+import requests
 import math
 from datetime import datetime, timedelta, timezone
-import requests
 
 url = "https://api.open-meteo.com/v1/forecast"
 params = {
     "latitude": 0,
     "longitude": 0,
-    "current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m"],
-}  # placeholder
+    "current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m"]
+} #placeholder
 
 response = requests.get(url, params=params)
 
 if response.status_code == 200:
     data = response.json()
-    current_weather = data["current"]
-    print(
-        f"Testing API connection with placeholder: 0.000000, 0.000000, Atlantic Ocean"
-    )
+    current_weather = data['current']
+    print(f"Testing API connection with placeholder: 0.000000, 0.000000, Atlantic Ocean")
     print(f"Temperature: {current_weather['temperature_2m']}°C")
     print(f"Humidity: {current_weather['relative_humidity_2m']}%")
     print(f"Wind Speed: {current_weather['wind_speed_10m']} km/h")
@@ -24,14 +22,13 @@ if response.status_code == 200:
 else:
     print(f"Failed to fetch data. Status code: {response.status_code}")
 
-
 def get_weather_by_city(city_name):
     geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
     geo_params = {
         "name": city_name,
         "count": 1,
         "language": "en",
-        "format": "json",
+        "format": "json"
     }
 
     geo_response = requests.get(geocoding_url, params=geo_params)
@@ -53,7 +50,7 @@ def get_weather_by_city(city_name):
     weather_params = {
         "latitude": lat,
         "longitude": lon,
-        "current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m"],
+        "current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m"]
     }
 
     weather_response = requests.get(weather_url, params=weather_params)
@@ -62,9 +59,8 @@ def get_weather_by_city(city_name):
         return None
 
     weather_data = weather_response.json()
-    current_weather = weather_data["current"]
+    current_weather = weather_data['current']
     return current_weather
-
 
 def get_wbgt_weather_by_city(city_name):
     geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
@@ -72,7 +68,7 @@ def get_wbgt_weather_by_city(city_name):
         "name": city_name,
         "count": 1,
         "language": "en",
-        "format": "json",
+        "format": "json"
     }
 
     geo_response = requests.get(geocoding_url, params=geo_params)
@@ -94,13 +90,7 @@ def get_wbgt_weather_by_city(city_name):
     weather_params = {
         "latitude": lat,
         "longitude": lon,
-        "current": [
-            "temperature_2m",
-            "relative_humidity_2m",
-            "wind_speed_10m",
-            "direct_radiation",
-            "diffuse_radiation",
-        ],
+        "current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "direct_radiation", "diffuse_radiation"]
     }
 
     weather_response = requests.get(weather_url, params=weather_params)
@@ -109,22 +99,20 @@ def get_wbgt_weather_by_city(city_name):
         return None
 
     weather_data = weather_response.json()
-    current = weather_data["current"]
+    current = weather_data['current']
 
-    temp = current["temperature_2m"]
-    rh = current["relative_humidity_2m"]
-    wind_speed = current["wind_speed_10m"]
-    solar_rad = current["direct_radiation"] + current["diffuse_radiation"]
+    temp = current['temperature_2m']
+    rh = current['relative_humidity_2m']
+    wind_speed = current['wind_speed_10m']
+    solar_rad = current['direct_radiation'] + current['diffuse_radiation']
 
     T = temp
     RH = rh
-    twb = (
-        T * math.atan(0.151977 * math.sqrt(RH + 8.313596))
-        + math.atan(T + RH)
-        - math.atan(RH - 1.676331)
-        + 0.00391838 * (RH**1.5) * math.atan(0.023101 * RH)
-        - 4.686035
-    )
+    twb = (T * math.atan(0.151977 * math.sqrt(RH + 8.313596)) +
+           math.atan(T + RH) -
+           math.atan(RH - 1.676331) +
+           0.00391838 * (RH ** 1.5) * math.atan(0.023101 * RH) -
+           4.686035)
 
     wind_m_s = wind_speed / 3.6
     tg = (0.0149 * solar_rad) + (1.13 * T) - (0.12 * wind_m_s) - 2.65
@@ -133,26 +121,23 @@ def get_wbgt_weather_by_city(city_name):
 
     wbgt = 0.7 * twb + 0.2 * tg + 0.1 * T
 
-    return {
-        "resolved_name": resolved_name,
-        "temp": temp,
-        "rh": rh,
-        "wind_speed": wind_speed,
-        "wind_m_s": wind_m_s,
-        "solar_rad": solar_rad,
-        "twb": twb,
-        "tg": tg,
-        "wbgt": wbgt,
+    return { 
+        'resolved_name': resolved_name,
+        'temp': temp,
+        'rh': rh,
+        'wind_speed': wind_speed,
+        'wind_m_s': wind_m_s,
+        'solar_rad': solar_rad,
+        'twb': twb,
+        'tg': tg,
+        'wbgt': wbgt
     }
-
 
 def get_global_wbgt(location_query):
     return get_wbgt_weather_by_city(location_query)
 
-
-if "get_global_wbgt" not in globals() and "get_wbgt_weather_by_city" in globals():
+if 'get_global_wbgt' not in globals() and 'get_wbgt_weather_by_city' in globals():
     get_global_wbgt = get_wbgt_weather_by_city
-
 
 def get_wbgt_risk_level(wbgt):
     if wbgt < 26.7:
@@ -166,49 +151,18 @@ def get_wbgt_risk_level(wbgt):
     else:
         return "❌ Extreme Risk (Extreme Danger - Suspend all non-essential outdoor activities)"
 
-
-class TimezoneRepository:
-
-    def __initCache__(self):
-        pass
-
-    @staticmethod
-    def get_local_time_and_offset(timezone_name):
-        if not timezone_name or timezone_name == "UTC":
-            return datetime.now(timezone.utc).strftime("%H:%M:%S"), "GMT+00:00"
-
-        try:
-            url = f"http://worldtimeapi.org/api/timezone/{timezone_name}"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                datetime_str = data.get("datetime", "")
-                utc_offset = data.get("utc_offset", "+00:00")
-                gmt_offset = f"GMT{utc_offset}"
-                if datetime_str and len(datetime_str) >= 19:
-                    time_str = datetime_str[11:19]
-                    return time_str, gmt_offset
-        except Exception:
-            pass
-
-        if "Singapore" in timezone_name or "Singapore" in str(timezone_name):
-            local_now = datetime.now(timezone.utc) + timedelta(hours=8)
-            return local_now.strftime("%H:%M:%S"), "GMT+08:00"
-
-        utc_now = datetime.now(timezone.utc)
-        return utc_now.strftime("%H:%M:%S"), "GMT+00:00"
-
-
-tz_repository = TimezoneRepository()
-
-
 def get_global_wbgt_disambiguated(city_or_neighborhood, country=None):
     query = city_or_neighborhood.strip()
     if country and country.strip():
         query = f"{query}, {country.strip()}"
 
     geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
-    geo_params = {"name": query, "count": 1, "language": "en", "format": "json"}
+    geo_params = {
+        "name": query,
+        "count": 1,
+        "language": "en",
+        "format": "json"
+    }
 
     resolved_timezone = "UTC"
     utc_offset_seconds = 0
@@ -225,11 +179,9 @@ def get_global_wbgt_disambiguated(city_or_neighborhood, country=None):
                 weather_params = {
                     "latitude": lat,
                     "longitude": lon,
-                    "timezone": "auto",
+                    "timezone": "auto"
                 }
-                weather_response = requests.get(
-                    weather_url, params=weather_params, timeout=5
-                )
+                weather_response = requests.get(weather_url, params=weather_params, timeout=5)
                 if weather_response.status_code == 200:
                     w_data = weather_response.json()
                     resolved_timezone = w_data.get("timezone", "UTC")
@@ -237,49 +189,35 @@ def get_global_wbgt_disambiguated(city_or_neighborhood, country=None):
     except Exception:
         pass
 
-    local_time, gmt_offset = tz_repository.get_local_time_and_offset(
-        resolved_timezone
-    )
+    # Generate precise local time and offset directly from Open-Meteo's returned offset value
+    hours = int(abs(utc_offset_seconds) // 3600)
+    minutes = int((abs(utc_offset_seconds) % 3600) // 60)
+    sign = "+" if utc_offset_seconds >= 0 else "-"
+    gmt_offset = f"GMT{sign}{hours:02d}:{minutes:02d}"
+    
+    local_dt = datetime.now(timezone.utc) + timedelta(seconds=utc_offset_seconds)
+    local_time = local_dt.strftime("%H:%M:%S")
+    current_date = local_dt.strftime("%Y-%m-%d")
+    
+    timestamp = f"{current_date} {local_time} {gmt_offset}"
 
-    if gmt_offset == "GMT+00:00" and utc_offset_seconds != 0:
-        hours = int(abs(utc_offset_seconds) // 3600)
-        minutes = int((abs(utc_offset_seconds) % 3600) // 60)
-        sign = "+" if utc_offset_seconds >= 0 else "-"
-        gmt_offset = f"GMT{sign}{hours:02d}:{minutes:02d}"
-        local_dt = datetime.now(timezone.utc) + timedelta(
-            seconds=utc_offset_seconds
-        )
-        local_time = local_dt.strftime("%H:%M:%S")
-
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    timestamp = (
-        f"{current_date} {local_time} {gmt_offset}"
-        if local_time
-        else f"{current_date} {gmt_offset}"
-    )
-
-    print(f'[{timestamp}] Searching for: "{query}"')
+    print(f"[{timestamp}] Searching for: \"{query}\"")
 
     analysis = get_wbgt_weather_by_city(query)
     if analysis:
-        risk_evaluation = get_wbgt_risk_level(analysis["wbgt"])
+        risk_evaluation = get_wbgt_risk_level(analysis['wbgt'])
         print(f"\nWeather & Outdoor WBGT Analysis for {analysis['resolved_name']}:")
         print(f"- Timezone: {resolved_timezone}")
         print(f"- Temperature: {analysis['temp']}°C")
         print(f"- Relative Humidity: {analysis['rh']}%")
-        print(
-            f"- Wind Speed: {analysis['wind_speed']} km/h (approx. {analysis['wind_m_s']:.1f} m/s)"
-        )
+        print(f"- Wind Speed: {analysis['wind_speed']} km/h (approx. {analysis['wind_m_s']:.1f} m/s)")
         print(f"- Solar Radiation: {analysis['solar_rad']:.1f} W/m²")
         print(f"- Estimated Wet Bulb (Twb): {analysis['twb']:.1f}°C")
         print(f"- Estimated Globe Temp (Tg): {analysis['tg']:.1f}°C")
         print(f"=> Estimated Outdoor WBGT: {analysis['wbgt']:.1f}°C")
         print(f"=> Heat Stress Risk Level: {risk_evaluation}")
     else:
-        print(
-            "Error: Weather data could not be parsed or location was not found."
-        )
-
+        print("Error: Weather data could not be parsed or location was not found.")
 
 city_input = input("Enter City, Neighborhood, or Landmark: ")
 country_input = input("Enter Country (optional, e.g. Canada, UK, US): ")
